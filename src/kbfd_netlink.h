@@ -38,6 +38,7 @@
 #define  BFD_SETFLAG                         6 /* Set Debug Flag Parameter */
 #define  BFD_CLEAR_COUNTER                   7 /* Clear Counter */
 #define  BFD_CLEAR_SESSION                   8 /* Re-Initialize Session */
+#define  BFD_SETDSCP                         9 /* Set DiffServ CodePoint */
 
 /* 
  * BFD State
@@ -53,7 +54,8 @@ struct bfd_nl_peerinfo
 {
 	__u8 is1hop;
 	__u8 state;
-	__u16 pad2;
+	__u8 dscp;
+	__u8 pad2;
 	union{
 		struct sockaddr sa;
 		struct sockaddr_in sin;

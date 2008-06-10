@@ -197,6 +197,14 @@ bfd_nl_rcv_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
 		break;
 	case BFD_CLEAR_SESSION:
 		break;
+	case BFD_SETDSCP:
+		peer = NLMSG_DATA(nlh);
+
+		if (peer)
+			err = bfd_session_set_dscp(&v4v6_proto, &peer->dst.sa, peer->ifindex, peer->dscp);
+		else
+			err = EINVAL;
+		break;
 	default:
 		err = EINVAL;
 		break;

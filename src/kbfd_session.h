@@ -78,6 +78,7 @@ int bfd_session_finish (void);
 struct bfd_session *bfd_session_lookup(struct bfd_proto *, u_int32_t, struct sockaddr *, int);
 int bfd_session_add(struct bfd_proto *, struct sockaddr *, int);
 int bfd_session_delete(struct bfd_proto *, struct sockaddr *, int);
+int bfd_session_set_dscp(struct bfd_proto *, struct sockaddr *, int, __u8);
 int bfd_bsm_event(struct bfd_session *, int);
 void bfd_reset_tx_timer(struct bfd_session *);
 void bfd_reset_expire_timer(struct bfd_session *);
