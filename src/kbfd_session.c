@@ -252,6 +252,7 @@ bfd_session_delete(struct bfd_proto *proto, struct sockaddr *dst, int ifindex)
 		return -1;
 	}
 
+	prev = NULL;
 	key = HASH_KEY(bfd1->cpkt.my_disc);
 	bfd2 = master->session_tbl[key];
 	while (bfd2){
