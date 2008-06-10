@@ -46,8 +46,8 @@ struct bfd_session
 	struct sockaddr *src;
 	struct bfd_interface *bif;
 	struct socket *tx_ctrl_sock;
-	struct work_struct t_rx_expire;
-	struct work_struct t_tx_work;
+	struct delayed_work t_rx_expire;
+	struct delayed_work t_tx_work;
 	struct bfd_proto *proto;
 
 	/* control packet */

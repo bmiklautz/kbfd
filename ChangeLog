@@ -2,6 +2,22 @@
 
 	* bugfix: bfd interval command implementation 
 
+2008-05-12  Peter Szilagyi <peszilagyi@gmail.com>
+
+	* Ported to Linux kernel 2.6.26.
+
+2008-05-07  Peter Szilagyi <peszilagyi@gmail.com>
+
+	* Fixed crashing bug when deleting BFD sessions.
+
+2008-04-19  Peter Szilagyi <peszilagyi@gmail.com>
+
+	* Ported to Linux kernel 2.6.25.
+
+2008-03-04  Peter Szilagyi <peszilagyi@gmail.com>
+
+	* Ported to Linux kernel 2.6.24.
+
 2007-03-25  Hajime TAZAKI  <thehajime@gmail.com>
 
 	* kbfd-0.1 release.

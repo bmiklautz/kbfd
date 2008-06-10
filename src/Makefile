@@ -1,5 +1,5 @@
 TARGET=kbfd.o
-CFLAGS+=-g -Wall
+EXTRA_CFLAGS+=-g -Wall
 KVER=$(shell uname -r)
 KMISC := /lib/modules/$(KVER)/misc/kbfd/
 list-m=kbfd

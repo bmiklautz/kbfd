@@ -48,7 +48,7 @@ bfd_interface_new(int ifindex)
 		bif->v_minrx = BFD_MIN_RX_INTERVAL_DEFAULT;
 		bif->v_mult = BFD_DETECT_MULT_DEFAULT;
 
-		dev = dev_get_by_index(ifindex);
+		dev = dev_get_by_index(&init_net, ifindex);
 		if (dev){
 			bif->name = dev->name;
 		}

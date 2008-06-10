@@ -45,7 +45,23 @@ struct bfd_proto v4v6_proto;
 
 extern struct bfd_master *master;
 
-
+static inline __u8
+ipv6_addr_hash(const struct in6_addr *addr)
+{	
+	__u32 word;
+
+	/* 
+	 * We perform the hash function over the last 64 bits of the address
+	 * This will include the IEEE address token on links that support it.
+	 */
+
+	word = (__force u32)(addr->s6_addr32[2] ^ addr->s6_addr32[3]);
+	word ^= (word >> 16);
+	word ^= (word >> 8);
+
+	return ((word ^ (word >> 4)) & 0x0f);
+}
+
 static u_int32_t
 bfd_v4v6_hash(struct sockaddr *key)
 {
@@ -141,14 +157,14 @@ bfd_v4v6_get_oif(struct sockaddr *addr)
         memset(&fl, 0, sizeof(fl));
         memcpy(&fl.fl4_dst, &(((struct sockaddr_in *)addr)->sin_addr),
                sizeof(struct in_addr));
-		ip_route_output_key((struct rtable **)&dst, &fl);
+		ip_route_output_key(&init_net, (struct rtable **)&dst, &fl);
 		return dst ? dst->dev->ifindex : 0;
 		break;
 	case AF_INET6:
         memset(&fl, 0, sizeof(fl));
 		ipv6_addr_copy(&fl.fl6_dst,
                        &((struct sockaddr_in6 *)addr)->sin6_addr);
-        dst = ip6_route_output(NULL, &fl);
+        dst = ip6_route_output(&init_net, NULL, &fl);
 		return dst ? dst->dev->ifindex : 0;
 		break;
 	default:
