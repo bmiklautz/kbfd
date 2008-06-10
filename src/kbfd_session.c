@@ -22,7 +22,6 @@
 
 #include <net/sock.h>
 
-#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/proc_fs.h>
 #include <linux/socket.h>
@@ -63,9 +62,9 @@ char *bfd_event_string[] = {
 };
 
 void bfd_start_xmit_timer(struct bfd_session *);
-void bfd_xmit_timeout(void *);
+void bfd_xmit_timeout(struct work_struct *);
 int bfd_bsm_event(struct bfd_session *, int);
-void bfd_detect_timeout(void *);
+void bfd_detect_timeout(struct work_struct *);
 void bfd_stop_xmit_timer(struct bfd_session *);
 void bfd_stop_expire_timer(struct bfd_session *);
 
@@ -105,12 +104,8 @@ bfd_session_new(struct bfd_proto *proto, struct sockaddr *dst, int ifindex)
 			bfd->cpkt.my_disc++;
 		}
 
-
-		INIT_WORK(&bfd->t_tx_work, bfd_xmit_timeout, NULL);
-		bfd->t_tx_work.data = bfd;
-
-		INIT_WORK(&bfd->t_rx_expire, bfd_detect_timeout, NULL);
-		bfd->t_rx_expire.data = bfd;
+		INIT_DELAYED_WORK(&bfd->t_tx_work, bfd_xmit_timeout);
+		INIT_DELAYED_WORK(&bfd->t_rx_expire, bfd_detect_timeout);
 
 		bfd->dst = kmalloc(bfd->proto->namelen(dst), GFP_KERNEL);
 		if (!bfd->dst){
@@ -252,6 +247,7 @@ bfd_session_delete(struct bfd_proto *proto, struct sockaddr *dst, int ifindex)
 		return -1;
 	}
 
+	prev = NULL;
 	key = HASH_KEY(bfd1->cpkt.my_disc);
 	bfd2 = master->session_tbl[key];
 	while (bfd2){
@@ -295,9 +291,10 @@ bfd_session_delete(struct bfd_proto *proto, struct sockaddr *dst, int ifindex)
 
 
 void
-bfd_xmit_timeout(void *data)
+bfd_xmit_timeout(struct work_struct *_work)
 {
-	struct bfd_session *bfd = (struct bfd_session *)data;
+	struct delayed_work *work = container_of(_work, struct delayed_work, work);
+	struct bfd_session *bfd = container_of(work, struct bfd_session, t_tx_work);
 
 	/* reset timer before send processing(avoid self synchronization) */
 	bfd_start_xmit_timer(bfd);
@@ -323,9 +320,8 @@ bfd_start_xmit_timer(struct bfd_session *bfd)
 void
 bfd_stop_xmit_timer(struct bfd_session *bfd)
 {
-	if (bfd->t_tx_work.pending)
-		cancel_rearming_delayed_workqueue(master->tx_ctrl_wq, &bfd->t_tx_work);
-
+	if (delayed_work_pending(&bfd->t_tx_work))
+		cancel_delayed_work_sync(&bfd->t_tx_work);
 	return;
 }
 
@@ -338,9 +334,10 @@ bfd_reset_tx_timer(struct bfd_session *bfd)
 }
 
 void
-bfd_detect_timeout(void *data)
+bfd_detect_timeout(struct work_struct *_work)
 {
-	struct bfd_session *bfd = (struct bfd_session *)data;
+	struct delayed_work *work = container_of(_work, struct delayed_work, work);
+	struct bfd_session *bfd = container_of(work, struct bfd_session, t_rx_expire);
 
 	bfd_bsm_event(bfd, BSM_Timer_Expired);
 	return;
@@ -349,9 +346,8 @@ bfd_detect_timeout(void *data)
 void
 bfd_stop_expire_timer(struct bfd_session *bfd)
 {
-	if (bfd->t_rx_expire.pending)
-		cancel_rearming_delayed_workqueue(master->ctrl_expire_wq, 
-										  &bfd->t_rx_expire);
+	if (delayed_work_pending(&bfd->t_rx_expire))
+		cancel_delayed_work_sync(&bfd->t_rx_expire);
 	return;
 }
 

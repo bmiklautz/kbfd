@@ -204,16 +204,25 @@ bfd_nl_rcv_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
 	return err;
 }
 
-static inline void
+/* Receive Handler */
+static void
 bfd_nl_rcv_skb(struct sk_buff *skb)
 {
-	if (skb->len >= NLMSG_SPACE(0)) {
-		int err;
-		struct nlmsghdr *nlh = (struct nlmsghdr *)skb->data;
+	struct nlmsghdr *nlh;
+	int err;
+	uint32_t rlen;
+
+	while (skb->len >= NLMSG_SPACE(0)) {
+		err = 0;
+		nlh = nlmsg_hdr(skb);
 
 		if (nlh->nlmsg_len < sizeof(*nlh) ||
 		    skb->len < nlh->nlmsg_len)
 			return;
+		
+		rlen = NLMSG_ALIGN(nlh->nlmsg_len);
+		if (rlen > skb->len)
+			rlen = skb->len;
 
 		/* parse client message */
 		err = bfd_nl_rcv_msg(skb, nlh);
@@ -223,22 +232,9 @@ bfd_nl_rcv_skb(struct sk_buff *skb)
 				blog_debug("bfd_nl: send ack");
 			netlink_ack(skb, nlh, err);
 		}
-	}
-	return;
-}
 
-/* Recieve Handler */
-static void 
-bfd_nl_rcv(struct sock *sk, int len)
-{
-	struct sk_buff *skb;
-	unsigned int qlen = skb_queue_len(&sk->sk_receive_queue);
-
-	while (qlen-- && (skb = skb_dequeue(&sk->sk_receive_queue))) {
-		bfd_nl_rcv_skb(skb);
-		kfree_skb(skb);
+		skb_pull(skb, rlen);
 	}
-	return;
 }
 
 /* Notify function */
@@ -281,7 +277,7 @@ nlmsg_failure:
 int
 bfd_netlink_init(void)
 {
-	bfd_nls = netlink_kernel_create(NETLINK_BFD, 1, bfd_nl_rcv, THIS_MODULE);
+	bfd_nls = netlink_kernel_create(&init_net, NETLINK_BFD, 1, bfd_nl_rcv_skb, NULL, THIS_MODULE);
 	if (!bfd_nls) {
 		blog_err("Failed to create new netlink socket(%u) for bfd",
 				 NETLINK_BFD);
