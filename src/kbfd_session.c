@@ -31,6 +31,7 @@
 #include <linux/netdevice.h>
 #include <linux/rcupdate.h>
 #include <net/sock.h>
+#include <net/inet_sock.h>
 
 #include "kbfd_session.h"
 #include "kbfd_packet.h"
@@ -289,6 +290,19 @@ bfd_session_delete(struct bfd_proto *proto, struct sockaddr *dst, int ifindex)
 	return 0;
 }
 
+
+int
+bfd_session_set_dscp(struct bfd_proto *proto, struct sockaddr *dst, int ifindex, __u8 dscp) {
+
+	struct bfd_session *bfd;
+
+	bfd = bfd_session_lookup(proto, 0, dst, ifindex);
+	if (!bfd)
+		return EINVAL;
+
+	inet_sk(bfd->tx_ctrl_sock->sk)->tos = dscp;
+	return 0;
+}
 
 void
 bfd_xmit_timeout(struct work_struct *_work)

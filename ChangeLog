@@ -1,3 +1,7 @@
+2008-06-09  Peter Szilagyi <peszilagyi@gmail.com>
+
+	* Added support for DiffServ CodePoint.
+
 2008-05-14  Hajime Tazaki  <tazaki@sfc.wide.ad.jp>
 
 	* bugfix: bfd interval command implementation 
