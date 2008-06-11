@@ -23,6 +23,7 @@
 #include <linux/skbuff.h>
 #include <linux/netlink.h>
 #include <linux/in.h>
+#include <net/inet_sock.h>
 
 #include "kbfd_packet.h"
 #include "kbfd_session.h"
@@ -51,6 +52,7 @@ bfd_peer_fill_info(struct sk_buff *skb, struct bfd_session *bfd,
 	memset(peer, 0, sizeof(struct bfd_nl_peerinfo));
 	peer->is1hop = 1;
 	peer->state = bfd->cpkt.state;
+	peer->dscp = inet_sk(bfd->tx_ctrl_sock->sk)->tos;
 	memcpy(&peer->dst, bfd->dst, bfd->proto->namelen(bfd->dst));
 	memcpy(&peer->src, bfd->src, bfd->proto->namelen(bfd->src));
 	peer->ifindex = bfd->bif->ifindex;
