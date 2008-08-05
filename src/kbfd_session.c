@@ -40,6 +40,9 @@
 #include "kbfd_interface.h"
 #include "kbfd.h"
 
+extern int BFD_DETECT_MULT_DEFAULT;
+extern int BFD_MIN_TX_INTERVAL_DEFAULT;
+extern int BFD_MIN_RX_INTERVAL_DEFAULT;
 
 static struct proc_dir_entry *kbfd_root_dir = NULL;
 static struct proc_dir_entry *session_proc = NULL;

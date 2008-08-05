@@ -29,10 +29,6 @@
 
 #define BFD_MIN_TX_INTERVAL_INIT   1000000 /* 1sec=1,000,000usec */
 #define BFD_MIN_RX_INTERVAL_INIT   1000000 /* 1sec=1,000,000usec */
-#define BFD_DETECT_MULT_DEFAULT          5
-
-#define BFD_MIN_TX_INTERVAL_DEFAULT   100000 /* 100msec=100,000usec */
-#define BFD_MIN_RX_INTERVAL_DEFAULT   100000 /* 100msec=100,000usec */
 
 #define BFD_SESSION_HASH_SIZE      255
 

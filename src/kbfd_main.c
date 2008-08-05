@@ -34,6 +34,18 @@
 
 struct bfd_master *master = NULL;
 
+int BFD_DETECT_MULT_DEFAULT = 5;
+int BFD_MIN_TX_INTERVAL_DEFAULT = 100000; /* 100msec=100,000usec */
+int BFD_MIN_RX_INTERVAL_DEFAULT = 100000; /* 100msec=100,000usec */
+
+module_param(BFD_DETECT_MULT_DEFAULT, int, 0000);
+module_param(BFD_MIN_TX_INTERVAL_DEFAULT, int, 0000);
+module_param(BFD_MIN_RX_INTERVAL_DEFAULT, int, 0000);
+
+MODULE_PARM_DESC(BFD_DETECT_MULT_DEFAULT, " Multiplier");
+MODULE_PARM_DESC(BFD_MIN_TX_INTERVAL_DEFAULT, " Min TX Interval [usec]");
+MODULE_PARM_DESC(BFD_MIN_RX_INTERVAL_DEFAULT, " Min RX Interval [usec]");
+
 static int __init
 bfd_init(void)
 {
