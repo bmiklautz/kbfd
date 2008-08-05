@@ -27,6 +27,10 @@
 #include "kbfd_session.h"
 #include "kbfd.h"
 
+extern int BFD_DETECT_MULT_DEFAULT;
+extern int BFD_MIN_TX_INTERVAL_DEFAULT;
+extern int BFD_MIN_RX_INTERVAL_DEFAULT;
+
 static struct bfd_interface *biflist = NULL;
 static DEFINE_SPINLOCK(bif_lock);
 /* FIXME */
