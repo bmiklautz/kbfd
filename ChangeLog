@@ -1,3 +1,8 @@
+2008-08-05  Peter Szilagyi <peszilagyi@gmail.com>
+
+	* Module options for setting multiplicator,
+	  min rx interval and min tx interval values.
+
 2008-06-09  Peter Szilagyi <peszilagyi@gmail.com>
 
 	* Added support for DiffServ CodePoint.
