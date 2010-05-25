@@ -710,13 +710,15 @@ bfd_session_init(void)
 		return 0;
 	}
 
-	session_proc = create_proc_entry("session", S_IFREG|S_IRWXUGO,
-									 kbfd_root_dir);
-	if (!session_proc)
+	session_proc = create_proc_entry("session", S_IFREG|S_IRWXUGO, kbfd_root_dir);
+	if (!session_proc) {
+		blog_err("kbf init fail: Could not create session entry");
  		return 0;
+	}
 
 	session_proc->read_proc = proc_session_read;
 	session_proc->write_proc = proc_session_write;
+	session_proc->owner = THIS_MODULE;
 
 	return 0;
 }
@@ -730,7 +732,7 @@ bfd_session_finish(void)
 	if(kbfd_root_dir){
 		if(session_proc)
 			remove_proc_entry("session", kbfd_root_dir);
-		remove_proc_entry("kbfd", 0);
+		remove_proc_entry("kbfd", NULL);
 	}
 
 	for (i = 0; i < BFD_SESSION_HASH_SIZE; i++){
