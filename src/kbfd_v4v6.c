@@ -294,9 +294,12 @@ bfd_v4v6_recv_thread(void *data)
 		}
 
 #ifdef DEBUG
+{
+char dbg_buffer[255];
 blog_info("ouraddr = %s ttl=%d iif=%d", 
-          bfd_v4v6_print((struct sockaddr *)&our_addr, buffer),
+          bfd_v4v6_print((struct sockaddr *)&our_addr, dbg_buffer),
           rcvttl, ifindex);
+}
 #endif
 
 		/* Peer address */
