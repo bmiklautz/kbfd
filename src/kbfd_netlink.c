@@ -44,7 +44,7 @@ bfd_peer_fill_info(struct sk_buff *skb, struct bfd_session *bfd,
 {
 	struct bfd_nl_peerinfo *peer;
 	struct nlmsghdr *nlh;
-	u_char *b = skb->tail;
+	u_char *b = skb_tail_pointer(skb);
 
 	nlh = NLMSG_NEW(skb, pid, seq, event, sizeof(*peer), flags);
 	peer = NLMSG_DATA(nlh);
@@ -67,7 +67,7 @@ bfd_peer_fill_info(struct sk_buff *skb, struct bfd_session *bfd,
 	peer->up_cnt = bfd->up_cnt;
 	peer->last_discont = bfd->last_discont;
 
-	nlh->nlmsg_len = skb->tail - b;
+	nlh->nlmsg_len = skb_tail_pointer(skb) - b;
 	return skb->len;
 
 nlmsg_failure:
