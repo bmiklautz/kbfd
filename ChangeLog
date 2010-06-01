@@ -1,3 +1,7 @@
+2010-06-01  Bernhard Miklautz <bernhard.miklautz@shacknet.at>
+
+	* Updated to build on x86_64
+
 2008-08-05  Peter Szilagyi <peszilagyi@gmail.com>
 
 	* Module options for setting multiplicator,
