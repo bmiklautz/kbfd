@@ -27,6 +27,15 @@
 #define  BFD_MULTI_CONTROL_PORT     4784
 #define  BFD_SRC_CONTROL_PORT_BEGIN 49152
 #define  BFD_SRC_CONTROL_PORT_END   65535
+#define NIP6(addr) \
+         ntohs((addr).s6_addr16[0]), \
+         ntohs((addr).s6_addr16[1]), \
+         ntohs((addr).s6_addr16[2]), \
+         ntohs((addr).s6_addr16[3]), \
+         ntohs((addr).s6_addr16[4]), \
+         ntohs((addr).s6_addr16[5]), \
+         ntohs((addr).s6_addr16[6]), \
+         ntohs((addr).s6_addr16[7])
 
 union ip_pktinfo_union
 {

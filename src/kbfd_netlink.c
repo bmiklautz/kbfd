@@ -162,7 +162,7 @@ bfd_nl_rcv_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
 			err = EINVAL;
 		break;
 	case BFD_GETPEER:
-		if (!nlh->nlmsg_flags&NLM_F_DUMP) {
+		if (!(nlh->nlmsg_flags&NLM_F_DUMP)) {
 			err =  EINVAL;
 			break;
 		}

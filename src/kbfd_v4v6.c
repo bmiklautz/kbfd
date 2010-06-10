@@ -118,7 +118,7 @@ bfd_v4v6_print(struct sockaddr *addr, char *buf)
 			sprintf(buf, "V6MAP " NIPQUAD_FMT, NIPQUAD(in.s_addr));
 		}
 		else{
-			sprintf(buf, NIP6_FMT,
+			sprintf(buf, "%04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x",
 					NIP6(((struct sockaddr_in6 *)addr)->sin6_addr));
 		}
 	}
@@ -436,8 +436,12 @@ int
 bfd_v4v6_finish(void)
 {
 	if (recv_thread_pid) {
-		kill_proc(recv_thread_pid, SIGTERM, 0);
-		wait_for_completion(&threadcomplete);
+		struct pid *recv_thread_pid_struct = NULL;
+		recv_thread_pid_struct = find_get_pid(recv_thread_pid);
+		if (recv_thread_pid_struct){
+			kill_pid(recv_thread_pid_struct, SIGTERM, 0);
+			wait_for_completion(&threadcomplete);
+		}
 	}
 
 	if (rx_ctrl_sock)
