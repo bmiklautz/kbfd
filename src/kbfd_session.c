@@ -718,7 +718,6 @@ bfd_session_init(void)
 
 	session_proc->read_proc = proc_session_read;
 	session_proc->write_proc = proc_session_write;
-	session_proc->owner = THIS_MODULE;
 
 	return 0;
 }
