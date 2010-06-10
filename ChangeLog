@@ -1,3 +1,8 @@
+2010-06-10  Bernhard Miklautz <bernhard.miklautz@shacknet.at>
+
+	* bugfix: when build with debug don't write debug message 
+	  into packet buffer
+
 2010-06-01  Bernhard Miklautz <bernhard.miklautz@shacknet.at>
 
 	* Updated to build on x86_64
