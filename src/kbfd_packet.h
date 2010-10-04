@@ -104,8 +104,7 @@
     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
  */
-struct bfd_ctrl_packet
-{
+struct bfd_ctrl_packet {
 #if defined(__LITTLE_ENDIAN_BITFIELD)
 	u_char diag:5;
 	u_char version:3;
@@ -145,11 +144,10 @@ struct bfd_ctrl_packet
 
 };
 
-struct bfd_auth_packet
-{
+struct bfd_auth_packet {
 	u_char auth_type;
 	u_char auth_len;
-	u_int16_t auth_data; 
+	u_int16_t auth_data;
 };
 
 struct bfd_session;
@@ -157,7 +155,7 @@ struct bfd_session;
 int bfd_sock_init(void);
 int bfd_sock_exit(void);
 int bfd_send_ctrl_packet(struct bfd_session *);
-int bfd_recv_ctrl_packet(struct bfd_proto *, struct sockaddr *, 
-						 struct sockaddr *, int, char *, int);
+int bfd_recv_ctrl_packet(struct bfd_proto *, struct sockaddr *,
+			 struct sockaddr *, int, char *, int);
 
 #endif /* _BFD_PACKET_H */

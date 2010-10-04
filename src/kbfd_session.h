@@ -38,8 +38,7 @@
 
 #define  HASH_KEY(X)                ((X) % BFD_SESSION_HASH_SIZE)
 
-struct bfd_session
-{
+struct bfd_session {
 	struct bfd_session *session_next;
 	struct bfd_session *nbr_next;
 	struct sockaddr *dst;
@@ -54,7 +53,7 @@ struct bfd_session
 	struct bfd_ctrl_packet cpkt;
 	u_int32_t auth_seq;
 	u_int32_t xmit_auth_seq;
-	u_int32_t auth_seq_known;	
+	u_int32_t auth_seq_known;
 	u_int32_t detect_time;
 	u_int32_t act_tx_intv;
 	u_int32_t act_rx_intv;
@@ -70,12 +69,13 @@ struct bfd_session
 	u_int32_t last_down;
 	u_int32_t last_diag;
 	u_int32_t up_cnt;
-	u_int32_t last_discont;		/* FIXME(not implemented) */
+	u_int32_t last_discont;	/* FIXME(not implemented) */
 };
 
-int bfd_session_init (void);
-int bfd_session_finish (void);
-struct bfd_session *bfd_session_lookup(struct bfd_proto *, u_int32_t, struct sockaddr *, int);
+int bfd_session_init(void);
+int bfd_session_finish(void);
+struct bfd_session *bfd_session_lookup(struct bfd_proto *, u_int32_t,
+				       struct sockaddr *, int);
 int bfd_session_add(struct bfd_proto *, struct sockaddr *, int);
 int bfd_session_delete(struct bfd_proto *, struct sockaddr *, int);
 int bfd_session_set_dscp(struct bfd_proto *, struct sockaddr *, int, __u8);

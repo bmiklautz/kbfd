@@ -20,20 +20,18 @@
  * Copyright (C) Hajime TAZAKI, 2007
  */
 
-
 #ifndef __BFD_H_
 #define __BFD_H_
 
 #include <linux/kernel.h>
 #include <linux/workqueue.h>
 
-#define BFD_MIN_TX_INTERVAL_INIT   1000000 /* 1sec=1,000,000usec */
-#define BFD_MIN_RX_INTERVAL_INIT   1000000 /* 1sec=1,000,000usec */
+#define BFD_MIN_TX_INTERVAL_INIT   1000000	/* 1sec=1,000,000usec */
+#define BFD_MIN_RX_INTERVAL_INIT   1000000	/* 1sec=1,000,000usec */
 
 #define BFD_SESSION_HASH_SIZE      255
 
-struct bfd_master
-{
+struct bfd_master {
 	struct bfd_session *session_tbl[BFD_SESSION_HASH_SIZE];
 	spinlock_t ses_tbl_lock;
 	struct workqueue_struct *tx_ctrl_wq;
@@ -41,17 +39,15 @@ struct bfd_master
 	u_int32_t discriminator;
 };
 
-struct bfd_proto
-{
+struct bfd_proto {
 	struct bfd_session **nbr_tbl;
 	spinlock_t nbr_tbl_lock;
-	int (*create_ctrl_socket)(struct bfd_session *);
-	u_int32_t (*hash)(struct sockaddr *);
-	int (*cmp)(struct sockaddr *, struct sockaddr *);
-	char *(*addr_print)(struct sockaddr *, char *);
-	int (*namelen)(struct sockaddr *);
-	int (*get_oif)(struct sockaddr *);
+	int (*create_ctrl_socket) (struct bfd_session *);
+	 u_int32_t(*hash) (struct sockaddr *);
+	int (*cmp) (struct sockaddr *, struct sockaddr *);
+	char *(*addr_print) (struct sockaddr *, char *);
+	int (*namelen) (struct sockaddr *);
+	int (*get_oif) (struct sockaddr *);
 };
-
 
 #endif /* __BFD_H_ */

@@ -36,13 +36,12 @@ static DEFINE_SPINLOCK(bif_lock);
 /* FIXME */
 extern struct bfd_proto v4v6_proto;
 
-inline static struct bfd_interface *
-bfd_interface_new(int ifindex)
+inline static struct bfd_interface *bfd_interface_new(int ifindex)
 {
 	struct bfd_interface *bif;
 
 	bif = kmalloc(sizeof(struct bfd_interface), GFP_KERNEL);
-	if (bif){
+	if (bif) {
 		struct net_device *dev;
 
 		memset(bif, 0, sizeof(struct bfd_interface));
@@ -53,21 +52,20 @@ bfd_interface_new(int ifindex)
 		bif->v_mult = BFD_DETECT_MULT_DEFAULT;
 
 		dev = dev_get_by_index(&init_net, ifindex);
-		if (dev){
+		if (dev) {
 			bif->name = dev->name;
 		}
 	}
 	return bif;
 }
 
-struct bfd_interface *
-bfd_interface_get(int ifindex)
+struct bfd_interface *bfd_interface_get(int ifindex)
 {
 	struct bfd_interface *bif = biflist;
 
 	/* lookup same interface */
 	rcu_read_lock();
-	while (bif){
+	while (bif) {
 		if (bif->ifindex == ifindex)
 			break;
 		bif = bif->next;
@@ -91,18 +89,16 @@ bfd_interface_get(int ifindex)
 	return bif;
 }
 
-void
-bfd_interface_free(struct bfd_interface *bif)
+void bfd_interface_free(struct bfd_interface *bif)
 {
 	synchronize_rcu();
-	if (bif){
+	if (bif) {
 		kfree(bif);
 	}
 	return;
 }
 
-void
-bfd_interface_change_timer(struct bfd_interface *bif)
+void bfd_interface_change_timer(struct bfd_interface *bif)
 {
 	struct bfd_interface *tmpbif = biflist;
 	struct bfd_session *bfd = NULL;
@@ -110,7 +106,7 @@ bfd_interface_change_timer(struct bfd_interface *bif)
 
 	/* lookup same interface */
 	rcu_read_lock();
-	while (tmpbif){
+	while (tmpbif) {
 		if (tmpbif == bif)
 			break;
 		tmpbif = tmpbif->next;
@@ -118,11 +114,12 @@ bfd_interface_change_timer(struct bfd_interface *bif)
 	rcu_read_unlock();
 
 	rcu_read_lock();
-	for (i = 0; i<BFD_SESSION_HASH_SIZE; i++){
+	for (i = 0; i < BFD_SESSION_HASH_SIZE; i++) {
 		bfd = v4v6_proto.nbr_tbl[i];
-		while (bfd){
+		while (bfd) {
 			if (bfd->bif == bif)
-				bfd_change_interval_time(bfd, bif->v_mintx, bif->v_minrx);
+				bfd_change_interval_time(bfd, bif->v_mintx,
+							 bif->v_minrx);
 			bfd = bfd->nbr_next;
 		}
 	}

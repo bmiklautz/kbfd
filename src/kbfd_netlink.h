@@ -23,22 +23,21 @@
 #ifndef __KBFD_NETLNIK_H_
 #define __KBFD_NETLNIK_H_
 
-
 /* Protocol Name Define FIXME */
 #define NETLINK_BFD (NETLINK_GENERIC + 1)
 
 /*
  * netlink message type
  */
-#define  BFD_NEWPEER                         1 /* Add BFD Session */
-#define  BFD_DELPEER                         2 /* Delete BFD Session */
-#define  BFD_GETPEER                         3 /* Get Peer Information */
-#define  BFD_ADMINDOWN                       4 /* Set Session to AdminDown */
-#define  BFD_SETLINK                         5 /* Set Interface Parameter */
-#define  BFD_SETFLAG                         6 /* Set Debug Flag Parameter */
-#define  BFD_CLEAR_COUNTER                   7 /* Clear Counter */
-#define  BFD_CLEAR_SESSION                   8 /* Re-Initialize Session */
-#define  BFD_SETDSCP                         9 /* Set DiffServ CodePoint */
+#define  BFD_NEWPEER                         1	/* Add BFD Session */
+#define  BFD_DELPEER                         2	/* Delete BFD Session */
+#define  BFD_GETPEER                         3	/* Get Peer Information */
+#define  BFD_ADMINDOWN                       4	/* Set Session to AdminDown */
+#define  BFD_SETLINK                         5	/* Set Interface Parameter */
+#define  BFD_SETFLAG                         6	/* Set Debug Flag Parameter */
+#define  BFD_CLEAR_COUNTER                   7	/* Clear Counter */
+#define  BFD_CLEAR_SESSION                   8	/* Re-Initialize Session */
+#define  BFD_SETDSCP                         9	/* Set DiffServ CodePoint */
 
 /* 
  * BFD State
@@ -50,38 +49,36 @@
 #define    BFD_BSM_STATE_MAX                 4
 
 /* Peer Information */
-struct bfd_nl_peerinfo
-{
+struct bfd_nl_peerinfo {
 	__u8 is1hop;
 	__u8 state;
 	__u8 dscp;
 	__u8 pad2;
-	union{
+	union {
 		struct sockaddr sa;
 		struct sockaddr_in sin;
 		struct sockaddr_in6 sin6;
-	}dst;
-	union{
+	} dst;
+	union {
 		struct sockaddr sa;
 		struct sockaddr_in sin;
 		struct sockaddr_in6 sin6;
-	}src;
+	} src;
 	int ifindex;
 	u_int32_t my_disc;
 	u_int32_t your_disc;
 
-    /* counters */
+	/* counters */
 	u_int64_t pkt_in;
 	u_int64_t pkt_out;
 	u_int32_t last_up;
 	u_int32_t last_down;
 	u_int32_t last_diag;
 	u_int32_t up_cnt;
-	u_int32_t last_discont;		/* FIXME(not implemented) */
+	u_int32_t last_discont;	/* FIXME(not implemented) */
 };
 
-struct bfd_nl_linkinfo
-{
+struct bfd_nl_linkinfo {
 	int ifindex;
 	u_int32_t mintx;
 	u_int32_t minrx;
@@ -93,6 +90,5 @@ int bfd_netlink_init(void);
 void bfd_netlink_finish(void);
 void bfd_nl_send(struct bfd_session *);
 #endif /* __KERNEL__ */
-
 
 #endif /* __KBFD_NETLNIK_H_ */

@@ -53,7 +53,7 @@ char *bfd_state_string[] = {
 	"AdminDown",
 	"Down",
 	"Init",
-	"Up",		
+	"Up",
 };
 
 char *bfd_event_string[] = {
@@ -71,27 +71,24 @@ int bfd_bsm_event(struct bfd_session *, int);
 void bfd_detect_timeout(struct work_struct *);
 void bfd_stop_xmit_timer(struct bfd_session *);
 void bfd_stop_expire_timer(struct bfd_session *);
-
 
-static u32
-get_sys_uptime(void)
+static u32 get_sys_uptime(void)
 {
 	struct timespec ts;
 
 	ktime_get_ts(&ts);
 
-	return ((ts.tv_sec * 100L) +
-			(ts.tv_nsec / (NSEC_PER_SEC / 100L)));
+	return ((ts.tv_sec * 100L) + (ts.tv_nsec / (NSEC_PER_SEC / 100L)));
 
 }
 
-inline struct bfd_session *
-bfd_session_new(struct bfd_proto *proto, struct sockaddr *dst, int ifindex)
+inline struct bfd_session *bfd_session_new(struct bfd_proto *proto,
+					   struct sockaddr *dst, int ifindex)
 {
 	struct bfd_session *bfd;
 
 	bfd = kmalloc(sizeof(struct bfd_session), GFP_KERNEL);
-	if (bfd){
+	if (bfd) {
 		memset(bfd, 0, sizeof(struct bfd_session));
 		bfd->proto = proto;
 
@@ -104,7 +101,8 @@ bfd_session_new(struct bfd_proto *proto, struct sockaddr *dst, int ifindex)
 		bfd->cpkt.version = BFD_VERSION_1;
 		bfd->cpkt.length = sizeof(struct bfd_ctrl_packet);
 		bfd->cpkt.my_disc = htonl(++master->discriminator);
-		while (bfd_session_lookup(bfd->proto, bfd->cpkt.my_disc, NULL, 0)){
+		while (bfd_session_lookup
+		       (bfd->proto, bfd->cpkt.my_disc, NULL, 0)) {
 			bfd->cpkt.my_disc++;
 		}
 
@@ -112,14 +110,14 @@ bfd_session_new(struct bfd_proto *proto, struct sockaddr *dst, int ifindex)
 		INIT_DELAYED_WORK(&bfd->t_rx_expire, bfd_detect_timeout);
 
 		bfd->dst = kmalloc(bfd->proto->namelen(dst), GFP_KERNEL);
-		if (!bfd->dst){
+		if (!bfd->dst) {
 			kfree(bfd);
 			return NULL;
 		}
 		memcpy(bfd->dst, dst, bfd->proto->namelen(dst));
 
 		bfd->src = kmalloc(bfd->proto->namelen(dst), GFP_KERNEL);
-		if (!bfd->src){
+		if (!bfd->src) {
 			kfree(bfd->dst);
 			kfree(bfd);
 			return NULL;
@@ -129,8 +127,8 @@ bfd_session_new(struct bfd_proto *proto, struct sockaddr *dst, int ifindex)
 		/* set output interface */
 		bfd->tx_ctrl_sock->sk->sk_bound_dev_if = ifindex;
 
-        if (ifindex == 0)
-            ifindex = bfd->proto->get_oif(dst);
+		if (ifindex == 0)
+			ifindex = bfd->proto->get_oif(dst);
 
 		/* bind interface */
 		bfd->bif = bfd_interface_get(ifindex);
@@ -139,14 +137,13 @@ bfd_session_new(struct bfd_proto *proto, struct sockaddr *dst, int ifindex)
 	return bfd;
 }
 
-void
-bfd_session_free(struct bfd_session *bfd)
+void bfd_session_free(struct bfd_session *bfd)
 {
-	if (bfd){
-		if (bfd->src){
+	if (bfd) {
+		if (bfd->src) {
 			kfree(bfd->src);
 		}
-		if (bfd->dst){
+		if (bfd->dst) {
 			kfree(bfd->dst);
 		}
 		kfree(bfd);
@@ -154,28 +151,27 @@ bfd_session_free(struct bfd_session *bfd)
 	return;
 }
 
-struct bfd_session *
-bfd_session_lookup(struct bfd_proto *proto, u_int32_t my_disc,
-				   struct sockaddr *dst, int ifindex)
+struct bfd_session *bfd_session_lookup(struct bfd_proto *proto,
+				       u_int32_t my_disc, struct sockaddr *dst,
+				       int ifindex)
 {
 	u_int32_t key;
 	struct bfd_session *bfd;
 
 	rcu_read_lock();
-	if (my_disc){
+	if (my_disc) {
 		key = HASH_KEY(my_disc);
 		bfd = master->session_tbl[key];
-		while (bfd){
+		while (bfd) {
 			if (bfd->cpkt.my_disc == my_disc)
 				break;
 			bfd = bfd->session_next;
 		}
-	}
-	else {
+	} else {
 		key = proto->hash(dst);
 
 		bfd = proto->nbr_tbl[key];
-		while (bfd){
+		while (bfd) {
 			if (proto->cmp(bfd->dst, dst) == 0)
 				if (!ifindex || bfd->bif->ifindex == ifindex)
 					break;
@@ -183,19 +179,18 @@ bfd_session_lookup(struct bfd_proto *proto, u_int32_t my_disc,
 		}
 	}
 	rcu_read_unlock();
-	
+
 	return bfd;
 }
 
-int
-bfd_session_add(struct bfd_proto *proto, struct sockaddr *dst, int ifindex)
+int bfd_session_add(struct bfd_proto *proto, struct sockaddr *dst, int ifindex)
 {
 	struct bfd_session *bfd;
 	u_int32_t key;
 	int err = 0;
 
 	bfd = bfd_session_lookup(proto, 0, dst, ifindex);
-	if (bfd){
+	if (bfd) {
 		blog_warn("Already registered. ignore.");
 		err = -EEXIST;
 		return err;
@@ -221,7 +216,6 @@ bfd_session_add(struct bfd_proto *proto, struct sockaddr *dst, int ifindex)
 	return err;
 }
 
-
 int
 bfd_session_delete(struct bfd_proto *proto, struct sockaddr *dst, int ifindex)
 {
@@ -233,8 +227,8 @@ bfd_session_delete(struct bfd_proto *proto, struct sockaddr *dst, int ifindex)
 	spin_lock(&tbl_lock);
 	key = proto->hash(dst);
 	bfd1 = proto->nbr_tbl[key];
-	while (bfd1){
-		if (proto->cmp(bfd1->dst, dst) == 0){
+	while (bfd1) {
+		if (proto->cmp(bfd1->dst, dst) == 0) {
 			if (prev)
 				prev->nbr_next = bfd1->nbr_next;
 			else
@@ -245,7 +239,7 @@ bfd_session_delete(struct bfd_proto *proto, struct sockaddr *dst, int ifindex)
 		bfd1 = bfd1->nbr_next;
 	}
 
-	if (!bfd1){
+	if (!bfd1) {
 		blog_err("not found. ignore");
 		spin_unlock(&tbl_lock);
 		return -1;
@@ -254,8 +248,8 @@ bfd_session_delete(struct bfd_proto *proto, struct sockaddr *dst, int ifindex)
 	prev = NULL;
 	key = HASH_KEY(bfd1->cpkt.my_disc);
 	bfd2 = master->session_tbl[key];
-	while (bfd2){
-		if (bfd2->cpkt.my_disc == bfd1->cpkt.my_disc){
+	while (bfd2) {
+		if (bfd2->cpkt.my_disc == bfd1->cpkt.my_disc) {
 			if (prev)
 				prev->session_next = bfd2->session_next;
 			else
@@ -267,19 +261,20 @@ bfd_session_delete(struct bfd_proto *proto, struct sockaddr *dst, int ifindex)
 	}
 	spin_unlock(&tbl_lock);
 
-	if (!bfd2){
-		blog_err("Session %d(local disc) not found. ignore", bfd1->cpkt.my_disc);
+	if (!bfd2) {
+		blog_err("Session %d(local disc) not found. ignore",
+			 bfd1->cpkt.my_disc);
 	}
 
-	if (bfd1 != bfd2){
-		blog_err("Session deletion isn't invalid %d", bfd1->cpkt.my_disc);
+	if (bfd1 != bfd2) {
+		blog_err("Session deletion isn't invalid %d",
+			 bfd1->cpkt.my_disc);
 	}
 
-
-	if (IS_DEBUG_BSM){
+	if (IS_DEBUG_BSM) {
 		blog_info("session %s, disc=%d deleted",
-				  proto->addr_print(bfd1->dst, buf),
-				  bfd1->cpkt.my_disc);
+			  proto->addr_print(bfd1->dst, buf),
+			  bfd1->cpkt.my_disc);
 	}
 
 	bfd_stop_xmit_timer(bfd1);
@@ -293,9 +288,10 @@ bfd_session_delete(struct bfd_proto *proto, struct sockaddr *dst, int ifindex)
 	return 0;
 }
 
-
 int
-bfd_session_set_dscp(struct bfd_proto *proto, struct sockaddr *dst, int ifindex, __u8 dscp) {
+bfd_session_set_dscp(struct bfd_proto *proto, struct sockaddr *dst, int ifindex,
+		     __u8 dscp)
+{
 
 	struct bfd_session *bfd;
 
@@ -307,11 +303,12 @@ bfd_session_set_dscp(struct bfd_proto *proto, struct sockaddr *dst, int ifindex,
 	return 0;
 }
 
-void
-bfd_xmit_timeout(struct work_struct *_work)
+void bfd_xmit_timeout(struct work_struct *_work)
 {
-	struct delayed_work *work = container_of(_work, struct delayed_work, work);
-	struct bfd_session *bfd = container_of(work, struct bfd_session, t_tx_work);
+	struct delayed_work *work =
+	    container_of(_work, struct delayed_work, work);
+	struct bfd_session *bfd =
+	    container_of(work, struct bfd_session, t_tx_work);
 
 	/* reset timer before send processing(avoid self synchronization) */
 	bfd_start_xmit_timer(bfd);
@@ -320,8 +317,7 @@ bfd_xmit_timeout(struct work_struct *_work)
 	return;
 }
 
-void
-bfd_start_xmit_timer(struct bfd_session *bfd)
+void bfd_start_xmit_timer(struct bfd_session *bfd)
 {
 	int jitter;
 
@@ -330,84 +326,76 @@ bfd_start_xmit_timer(struct bfd_session *bfd)
 	jitter = 75 + jitter % ((bfd->cpkt.detect_mult == 1 ? 15 : 25) + 1);
 
 	queue_delayed_work(master->tx_ctrl_wq, &bfd->t_tx_work,
-					   usecs_to_jiffies(bfd->act_tx_intv) * jitter / 100 );
+			   usecs_to_jiffies(bfd->act_tx_intv) * jitter / 100);
 	return;
 }
 
-void
-bfd_stop_xmit_timer(struct bfd_session *bfd)
+void bfd_stop_xmit_timer(struct bfd_session *bfd)
 {
 	if (delayed_work_pending(&bfd->t_tx_work))
 		cancel_delayed_work_sync(&bfd->t_tx_work);
 	return;
 }
 
-void
-bfd_reset_tx_timer(struct bfd_session *bfd)
+void bfd_reset_tx_timer(struct bfd_session *bfd)
 {
 	bfd_stop_xmit_timer(bfd);
 	bfd_start_xmit_timer(bfd);
 	return;
 }
 
-void
-bfd_detect_timeout(struct work_struct *_work)
+void bfd_detect_timeout(struct work_struct *_work)
 {
-	struct delayed_work *work = container_of(_work, struct delayed_work, work);
-	struct bfd_session *bfd = container_of(work, struct bfd_session, t_rx_expire);
+	struct delayed_work *work =
+	    container_of(_work, struct delayed_work, work);
+	struct bfd_session *bfd =
+	    container_of(work, struct bfd_session, t_rx_expire);
 
 	bfd_bsm_event(bfd, BSM_Timer_Expired);
 	return;
 }
 
-void
-bfd_stop_expire_timer(struct bfd_session *bfd)
+void bfd_stop_expire_timer(struct bfd_session *bfd)
 {
 	if (delayed_work_pending(&bfd->t_rx_expire))
 		cancel_delayed_work_sync(&bfd->t_rx_expire);
 	return;
 }
 
-void
-bfd_reset_expire_timer(struct bfd_session *bfd)
+void bfd_reset_expire_timer(struct bfd_session *bfd)
 {
 	bfd_stop_expire_timer(bfd);
 	queue_delayed_work(master->ctrl_expire_wq, &bfd->t_rx_expire,
-					   usecs_to_jiffies(bfd->detect_time));
+			   usecs_to_jiffies(bfd->detect_time));
 	return;
 }
 
-
 void
-bfd_change_interval_time(struct bfd_session *bfd,
-						  u_int32_t tx, u_int32_t rx)
+bfd_change_interval_time(struct bfd_session *bfd, u_int32_t tx, u_int32_t rx)
 {
 	if (IS_DEBUG_BSM)
-		blog_info("Try to change intv TX=%d(usec), RX=%d(usec)", 
-			tx, rx);
+		blog_info("Try to change intv TX=%d(usec), RX=%d(usec)",
+			  tx, rx);
 
 	/* Section 6.7.3 Description */
-	if (bfd->cpkt.state == BSM_Up &&
-		tx > ntohl(bfd->cpkt.des_min_tx_intv)){
+	if (bfd->cpkt.state == BSM_Up && tx > ntohl(bfd->cpkt.des_min_tx_intv)) {
 		bfd->cpkt.poll = 1;
 		blog_info("BFD Poll Sequence is started(tx_intv change)");
-	}
-	else{
+	} else {
 		bfd->act_tx_intv = tx < ntohl(bfd->last_rcv_req_rx) ?
-			ntohl(bfd->last_rcv_req_rx) : tx;
+		    ntohl(bfd->last_rcv_req_rx) : tx;
 		bfd_reset_tx_timer(bfd);
 		if (IS_DEBUG_BSM)
-			blog_info("New TX %d(usec)(tx_intv change)", 
-				bfd->act_tx_intv);
+			blog_info("New TX %d(usec)(tx_intv change)",
+				  bfd->act_tx_intv);
 	}
 
-	if (bfd->cpkt.state == BSM_Up &&
-		rx < ntohl(bfd->cpkt.req_min_rx_intv)){
+	if (bfd->cpkt.state == BSM_Up && rx < ntohl(bfd->cpkt.req_min_rx_intv)) {
 		bfd->cpkt.poll = 1;
 		if (IS_DEBUG_BSM)
-			blog_info("BFD Poll Sequence is started(rx_intv change).");
-	}
-	else{
+			blog_info
+			    ("BFD Poll Sequence is started(rx_intv change).");
+	} else {
 		bfd->act_rx_intv = rx;
 		if (IS_DEBUG_BSM)
 			blog_info("New RX %d(usec)(rx_intv change)", rx);
@@ -418,15 +406,11 @@ bfd_change_interval_time(struct bfd_session *bfd,
 	bfd->cpkt.detect_mult = bfd->bif->v_mult;
 
 	if (IS_DEBUG_BSM)
-		blog_info("Change intv TX=%d(usec), RX=%d(usec)", 
-			tx, rx);
+		blog_info("Change intv TX=%d(usec), RX=%d(usec)", tx, rx);
 	return;
 }
-
 
-
-int
-bsm_ignore(struct bfd_session *bfd)
+int bsm_ignore(struct bfd_session *bfd)
 {
 	if (IS_DEBUG_BSM)
 		blog_info("BSM: ignored.");
@@ -434,16 +418,14 @@ bsm_ignore(struct bfd_session *bfd)
 	return 0;
 }
 
-int
-bsm_toggle_admin_down(struct bfd_session *bfd)
+int bsm_toggle_admin_down(struct bfd_session *bfd)
 {
-	if (bfd->cpkt.state != BSM_AdminDown){
+	if (bfd->cpkt.state != BSM_AdminDown) {
 		/* goes to administratively down */
 		bfd->cpkt.diag = BFD_DIAG_ADMIN_DOWN;
 		bfd_stop_xmit_timer(bfd);
 		bfd_stop_expire_timer(bfd);
-	}
-	else{
+	} else {
 		/* wake up session */
 		bfd->cpkt.diag = BFD_DIAG_NO_DIAG;
 		bfd_bsm_event(bfd, BSM_Start);
@@ -452,39 +434,33 @@ bsm_toggle_admin_down(struct bfd_session *bfd)
 	return 0;
 }
 
-int
-bsm_start(struct bfd_session *bfd)
+int bsm_start(struct bfd_session *bfd)
 {
 	bfd_start_xmit_timer(bfd);
 	return 0;
 }
 
-int
-bsm_rcvd_down(struct bfd_session *bfd)
+int bsm_rcvd_down(struct bfd_session *bfd)
 {
-	if (bfd->cpkt.state == BSM_Up){
+	if (bfd->cpkt.state == BSM_Up) {
 		bfd->cpkt.diag = BFD_DIAG_NBR_SESSION_DOWN;
 	}
 	return 0;
 }
 
-int
-bsm_rcvd_init(struct bfd_session *bfd)
+int bsm_rcvd_init(struct bfd_session *bfd)
 {
 	return 0;
 }
 
-int
-bsm_rcvd_up(struct bfd_session *bfd)
+int bsm_rcvd_up(struct bfd_session *bfd)
 {
 	return 0;
 }
 
-int
-bsm_timer_expire(struct bfd_session *bfd)
+int bsm_timer_expire(struct bfd_session *bfd)
 {
-	blog_info("BSM:Timeout. to = %uusec", 
-			  bfd->detect_time);
+	blog_info("BSM:Timeout. to = %uusec", bfd->detect_time);
 	bfd->cpkt.diag = BFD_DIAG_CTRL_TIME_EXPIRED;
 
 	/* reset timer */
@@ -493,58 +469,76 @@ bsm_timer_expire(struct bfd_session *bfd)
 	return 0;
 }
 
-struct
-{
-	int (*func)(struct bfd_session *);
+struct {
+	int (*func) (struct bfd_session *);
 	int next_state;
 } BSM[BFD_BSM_STATE_MAX][BFD_BSM_EVENT_MAX]
-={
+    = {
 	{
 		/* AdminDown */
-		{bsm_ignore, BSM_AdminDown},				/* Start */
-		{bsm_ignore, BSM_AdminDown},				/* Received_Down */
-		{bsm_ignore, BSM_AdminDown},				/* Received_Init */
-		{bsm_ignore, BSM_AdminDown},				/* Received_Up */
-		{bsm_ignore, BSM_AdminDown},				/* TimerExpired */
-		{bsm_toggle_admin_down, BSM_Down},			/* Toggle_AdminDown */
-	},
-	{
+		{
+		bsm_ignore, BSM_AdminDown},	/* Start */
+		{
+		bsm_ignore, BSM_AdminDown},	/* Received_Down */
+		{
+		bsm_ignore, BSM_AdminDown},	/* Received_Init */
+		{
+		bsm_ignore, BSM_AdminDown},	/* Received_Up */
+		{
+		bsm_ignore, BSM_AdminDown},	/* TimerExpired */
+		{
+		bsm_toggle_admin_down, BSM_Down},	/* Toggle_AdminDown */
+	}, {
 		/* Down */
-		{bsm_start, BSM_Down},						/* Start */
-		{bsm_rcvd_down, BSM_Init},					/* Received_Down */
-		{bsm_rcvd_init, BSM_Up},					/* Received_Init */
-		{bsm_ignore, BSM_Down},						/* Received_Up */
-		{bsm_ignore, BSM_Down},						/* TimerExpired */
-		{bsm_toggle_admin_down, BSM_AdminDown},		/* Toggle_AdminDown */
-	},
-	{
+		{
+		bsm_start, BSM_Down},	/* Start */
+		{
+		bsm_rcvd_down, BSM_Init},	/* Received_Down */
+		{
+		bsm_rcvd_init, BSM_Up},	/* Received_Init */
+		{
+		bsm_ignore, BSM_Down},	/* Received_Up */
+		{
+		bsm_ignore, BSM_Down},	/* TimerExpired */
+		{
+		bsm_toggle_admin_down, BSM_AdminDown},	/* Toggle_AdminDown */
+	}, {
 		/* Init */
-		{bsm_ignore, BSM_Init},						/* Start */
-		{bsm_ignore, BSM_Init},						/* Received_Down */
-		{bsm_rcvd_down, BSM_Up},					/* Received_Init */
-		{bsm_rcvd_up, BSM_Up},						/* Received_Up */
-		{bsm_timer_expire, BSM_Down},				/* TimerExpired */
-		{bsm_toggle_admin_down, BSM_AdminDown},		/* Toggle_AdminDown */
-	},
-	{
+		{
+		bsm_ignore, BSM_Init},	/* Start */
+		{
+		bsm_ignore, BSM_Init},	/* Received_Down */
+		{
+		bsm_rcvd_down, BSM_Up},	/* Received_Init */
+		{
+		bsm_rcvd_up, BSM_Up},	/* Received_Up */
+		{
+		bsm_timer_expire, BSM_Down},	/* TimerExpired */
+		{
+		bsm_toggle_admin_down, BSM_AdminDown},	/* Toggle_AdminDown */
+	}, {
 		/* Up */
-		{bsm_ignore, BSM_Up},						/* Start */
-		{bsm_rcvd_down, BSM_Down},					/* Received_Down */
-		{bsm_ignore, BSM_Up},						/* Received_Init */
-		{bsm_ignore, BSM_Up},						/* Received_Up */
-		{bsm_timer_expire, BSM_Down},				/* TimerExpired */
-		{bsm_toggle_admin_down, BSM_AdminDown},		/* Toggle_AdminDown */
-	},
-};
+		{
+		bsm_ignore, BSM_Up},	/* Start */
+		{
+		bsm_rcvd_down, BSM_Down},	/* Received_Down */
+		{
+		bsm_ignore, BSM_Up},	/* Received_Init */
+		{
+		bsm_ignore, BSM_Up},	/* Received_Up */
+		{
+		bsm_timer_expire, BSM_Down},	/* TimerExpired */
+		{
+		bsm_toggle_admin_down, BSM_AdminDown},	/* Toggle_AdminDown */
+},};
 
-int
-bfd_bsm_event(struct bfd_session *bfd, int bsm_event)
+int bfd_bsm_event(struct bfd_session *bfd, int bsm_event)
 {
 	int next_state, old_state;
 	char buf[256];
 
 	old_state = bfd->cpkt.state;
-	next_state = (*(BSM[bfd->cpkt.state][bsm_event].func))(bfd);
+	next_state = (*(BSM[bfd->cpkt.state][bsm_event].func)) (bfd);
 
 	if (!next_state)
 		bfd->cpkt.state = BSM[bfd->cpkt.state][bsm_event].next_state;
@@ -554,86 +548,84 @@ bfd_bsm_event(struct bfd_session *bfd, int bsm_event)
 	if (IS_DEBUG_BSM)
 		blog_info("BSM:Event (%s)", bfd_event_string[bsm_event]);
 
-	if (bfd->cpkt.state != old_state){
-		if (bfd->cpkt.state == BSM_Up || old_state == BSM_Up){
-			blog_info("%s Sta Chg %s=>%s(%s)", 
-					  bfd->proto->addr_print(bfd->dst, buf),
-					  bfd_state_string[old_state], 
-					  bfd_state_string[bfd->cpkt.state],
-					  bfd_event_string[bsm_event]);
+	if (bfd->cpkt.state != old_state) {
+		if (bfd->cpkt.state == BSM_Up || old_state == BSM_Up) {
+			blog_info("%s Sta Chg %s=>%s(%s)",
+				  bfd->proto->addr_print(bfd->dst, buf),
+				  bfd_state_string[old_state],
+				  bfd_state_string[bfd->cpkt.state],
+				  bfd_event_string[bsm_event]);
 
 			/* notify netlink user */
 			bfd_nl_send(bfd);
-		}
-		else if (IS_DEBUG_BSM){
-			blog_info("%s Sta Chg %s=>%s(%s)", 
-					  bfd->proto->addr_print(bfd->dst, buf),
-					  bfd_state_string[old_state], 
-					  bfd_state_string[bfd->cpkt.state],
-					  bfd_event_string[bsm_event]);
+		} else if (IS_DEBUG_BSM) {
+			blog_info("%s Sta Chg %s=>%s(%s)",
+				  bfd->proto->addr_print(bfd->dst, buf),
+				  bfd_state_string[old_state],
+				  bfd_state_string[bfd->cpkt.state],
+				  bfd_event_string[bsm_event]);
 		}
 
 		/* if state changed from !Up to Up, Set Tx/Rx Interval */
-		if (old_state != BSM_Up && bfd->cpkt.state == BSM_Up){
+		if (old_state != BSM_Up && bfd->cpkt.state == BSM_Up) {
 			bfd_change_interval_time(bfd, bfd->bif->v_mintx,
-									  bfd->bif->v_minrx);
+						 bfd->bif->v_minrx);
 			/* set uptime */
 			bfd->last_up = get_sys_uptime();
 			bfd->up_cnt++;
 		}
 
 		/* Reset Tx Timer */
-		if (bfd->cpkt.state != BSM_Up){
+		if (bfd->cpkt.state != BSM_Up) {
 			bfd_change_interval_time(bfd, BFD_MIN_TX_INTERVAL_INIT,
-									  BFD_MIN_RX_INTERVAL_INIT);
+						 BFD_MIN_RX_INTERVAL_INIT);
 
 			/* Cancel Expire timer */
 			bfd_stop_expire_timer(bfd);
 		}
 		/* set downtime */
-		if (bfd->cpkt.state == BSM_Down){
+		if (bfd->cpkt.state == BSM_Down) {
 			bfd->last_down = get_sys_uptime();
 			bfd->last_diag = bfd->cpkt.diag;
 		}
 
 		/* Reset Diagnostic Code */
-		if (old_state == BSM_Down){
+		if (old_state == BSM_Down) {
 			bfd->cpkt.diag = BFD_DIAG_NO_DIAG;
 		}
 	}
 
 	return 0;
 }
-
 
-
 static int
-proc_session_read(char *page, char **start, off_t off, 
-				  int count, int *eof, void *data)
+proc_session_read(char *page, char **start, off_t off,
+		  int count, int *eof, void *data)
 {
-	size_t len=0;
-	int i=0;
+	size_t len = 0;
+	int i = 0;
 	char buf[256];
 
 	/* Header */
-	len += sprintf (page+len, "DstAddr         MyDisc YoDisc If             LUp      LDown LDiag State \n");
+	len +=
+	    sprintf(page + len,
+		    "DstAddr         MyDisc YoDisc If             LUp      LDown LDiag State \n");
 
-	for (i = 0; i < BFD_SESSION_HASH_SIZE; i++){
+	for (i = 0; i < BFD_SESSION_HASH_SIZE; i++) {
 		struct bfd_session *bfd;
 
 		bfd = master->session_tbl[i];
-		while (bfd){
-			len += sprintf (page+len,
-							"%15s %6u %6u %4s(%1d) %10u %10u %5d %s\n", 
-							bfd->proto->addr_print(bfd->dst, buf),
-							ntohl(bfd->cpkt.my_disc),
-							ntohl(bfd->cpkt.your_disc),
-							bfd->bif->ifindex ? bfd->bif->name : "none",
-							bfd->bif->ifindex,
-							bfd->last_up,
-							bfd->last_down,
-							bfd->last_diag,
-							bfd_state_string[bfd->cpkt.state]);
+		while (bfd) {
+			len += sprintf(page + len,
+				       "%15s %6u %6u %4s(%1d) %10u %10u %5d %s\n",
+				       bfd->proto->addr_print(bfd->dst, buf),
+				       ntohl(bfd->cpkt.my_disc),
+				       ntohl(bfd->cpkt.your_disc),
+				       bfd->bif->ifindex ? bfd->bif->
+				       name : "none", bfd->bif->ifindex,
+				       bfd->last_up, bfd->last_down,
+				       bfd->last_diag,
+				       bfd_state_string[bfd->cpkt.state]);
 			bfd = bfd->session_next;
 		}
 	}
@@ -645,8 +637,8 @@ proc_session_read(char *page, char **start, off_t off,
 #define MK_IP(a,b,c,d) ((a << 24) | (b << 16) | (c << 8) | d)
 
 static int
-proc_session_write(struct file *file, const char __user *buffer,
-               unsigned long count, void *data)
+proc_session_write(struct file *file, const char __user * buffer,
+		   unsigned long count, void *data)
 {
 	char c, sw;
 	unsigned int d1, d2, d3, d4;
@@ -660,60 +652,63 @@ proc_session_write(struct file *file, const char __user *buffer,
 		return rc;
 
 	/* FIXME */
-	memset (&dst, 0, sizeof (struct sockaddr_in));
+	memset(&dst, 0, sizeof(struct sockaddr_in));
 
-	if (sscanf(buffer, "%c %u.%u.%u.%u %u\n", &sw, &d1, &d2, &d3, &d4, &ifindex) == 6){
+	if (sscanf
+	    (buffer, "%c %u.%u.%u.%u %u\n", &sw, &d1, &d2, &d3, &d4,
+	     &ifindex) == 6) {
 		dst.sin_family = AF_INET;
-        dst.sin_addr.s_addr = htonl(MK_IP(d1,d2,d3,d4));
-		switch (sw){
+		dst.sin_addr.s_addr = htonl(MK_IP(d1, d2, d3, d4));
+		switch (sw) {
 		case '+':
-			bfd_session_add(&v4v6_proto, (struct sockaddr *)&dst, ifindex);
+			bfd_session_add(&v4v6_proto, (struct sockaddr *)&dst,
+					ifindex);
 			break;
 		case '-':
-			bfd_session_delete(&v4v6_proto, (struct sockaddr *)&dst, ifindex);
+			bfd_session_delete(&v4v6_proto, (struct sockaddr *)&dst,
+					   ifindex);
 			break;
 		default:
 			break;
 		}
-	}
-	else{
+	} else {
 		blog_err("input format is invalid...:");
 	}
 
 	return count;
 }
 
-
-int
-bfd_session_init(void)
+int bfd_session_init(void)
 {
 	/* initialize hash */
 	memset(master->session_tbl, 0,
-			sizeof(struct bfd_session *) * BFD_SESSION_HASH_SIZE);
+	       sizeof(struct bfd_session *) * BFD_SESSION_HASH_SIZE);
 
 	/* Workqueue for send process */
 	master->tx_ctrl_wq = create_singlethread_workqueue("kbfd_tx");
-	if (!master->tx_ctrl_wq){
+	if (!master->tx_ctrl_wq) {
 		blog_err("failed create workqueue");
 	}
 
 	/* Workqueue for receive expire */
-	master->ctrl_expire_wq = create_singlethread_workqueue("kbfd_rx_expire");
-	if (!master->ctrl_expire_wq){
+	master->ctrl_expire_wq =
+	    create_singlethread_workqueue("kbfd_rx_expire");
+	if (!master->ctrl_expire_wq) {
 		blog_err("failed create workqueue");
 	}
 
 	/* proc fs */
 	kbfd_root_dir = proc_mkdir("kbfd", NULL);
-	if (!kbfd_root_dir){
+	if (!kbfd_root_dir) {
 		blog_err("kbfd init fail(proc)...:");
 		return 0;
 	}
 
-	session_proc = create_proc_entry("session", S_IFREG|S_IRWXUGO, kbfd_root_dir);
+	session_proc =
+	    create_proc_entry("session", S_IFREG | S_IRWXUGO, kbfd_root_dir);
 	if (!session_proc) {
 		blog_err("kbf init fail: Could not create session entry");
- 		return 0;
+		return 0;
 	}
 
 	session_proc->read_proc = proc_session_read;
@@ -722,24 +717,23 @@ bfd_session_init(void)
 	return 0;
 }
 
-
-int
-bfd_session_finish(void)
+int bfd_session_finish(void)
 {
 	int i = 0;
 
-	if(kbfd_root_dir){
-		if(session_proc)
+	if (kbfd_root_dir) {
+		if (session_proc)
 			remove_proc_entry("session", kbfd_root_dir);
 		remove_proc_entry("kbfd", NULL);
 	}
 
-	for (i = 0; i < BFD_SESSION_HASH_SIZE; i++){
+	for (i = 0; i < BFD_SESSION_HASH_SIZE; i++) {
 		struct bfd_session *bfd;
 
 		bfd = master->session_tbl[i];
-		while (bfd){
-			bfd_session_delete(bfd->proto, bfd->dst, bfd->bif->ifindex);
+		while (bfd) {
+			bfd_session_delete(bfd->proto, bfd->dst,
+					   bfd->bif->ifindex);
 
 			bfd_stop_xmit_timer(bfd);
 			bfd_stop_expire_timer(bfd);
@@ -747,12 +741,12 @@ bfd_session_finish(void)
 		}
 	}
 
-	if (master->ctrl_expire_wq){
+	if (master->ctrl_expire_wq) {
 		destroy_workqueue(master->ctrl_expire_wq);
 		master->ctrl_expire_wq = NULL;
 	}
 
-	if (master->tx_ctrl_wq){
+	if (master->tx_ctrl_wq) {
 		destroy_workqueue(master->tx_ctrl_wq);
 		master->tx_ctrl_wq = NULL;
 	}

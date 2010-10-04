@@ -35,8 +35,8 @@
 struct bfd_master *master = NULL;
 
 int BFD_DETECT_MULT_DEFAULT = 5;
-int BFD_MIN_TX_INTERVAL_DEFAULT = 100000; /* 100msec=100,000usec */
-int BFD_MIN_RX_INTERVAL_DEFAULT = 100000; /* 100msec=100,000usec */
+int BFD_MIN_TX_INTERVAL_DEFAULT = 100000;	/* 100msec=100,000usec */
+int BFD_MIN_RX_INTERVAL_DEFAULT = 100000;	/* 100msec=100,000usec */
 
 module_param(BFD_DETECT_MULT_DEFAULT, int, 0000);
 module_param(BFD_MIN_TX_INTERVAL_DEFAULT, int, 0000);
@@ -46,11 +46,10 @@ MODULE_PARM_DESC(BFD_DETECT_MULT_DEFAULT, " Multiplier");
 MODULE_PARM_DESC(BFD_MIN_TX_INTERVAL_DEFAULT, " Min TX Interval [usec]");
 MODULE_PARM_DESC(BFD_MIN_RX_INTERVAL_DEFAULT, " Min RX Interval [usec]");
 
-static int __init
-bfd_init(void)
+static int __init bfd_init(void)
 {
 	master = kmalloc(sizeof(struct bfd_master), GFP_KERNEL);
-	if (!master){
+	if (!master) {
 		blog_err("kmalloc error");
 		return -1;
 	}
@@ -65,8 +64,7 @@ bfd_init(void)
 	return 0;
 }
 
-static void __exit
-bfd_exit(void)
+static void __exit bfd_exit(void)
 {
 	bfd_session_finish();
 	bfd_v4v6_finish();
@@ -81,4 +79,3 @@ bfd_exit(void)
 module_init(bfd_init);
 module_exit(bfd_exit);
 MODULE_LICENSE("GPL");
-

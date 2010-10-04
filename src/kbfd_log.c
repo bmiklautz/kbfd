@@ -21,8 +21,7 @@
 #include <stdarg.h>
 #include <linux/kernel.h>
 
-void
-blog(const char *format, ...)
+void blog(const char *format, ...)
 {
 	va_list args;
 	va_start(args, format);
@@ -30,4 +29,3 @@ blog(const char *format, ...)
 	printk(format, args);
 	va_end(args);
 }
-

@@ -40,7 +40,7 @@ extern struct bfd_proto v4v6_proto;
 
 static int
 bfd_peer_fill_info(struct sk_buff *skb, struct bfd_session *bfd,
-				   u32 pid, u32 seq, int event, unsigned int flags)
+		   u32 pid, u32 seq, int event, unsigned int flags)
 {
 	struct bfd_nl_peerinfo *peer;
 	struct nlmsghdr *nlh;
@@ -59,7 +59,7 @@ bfd_peer_fill_info(struct sk_buff *skb, struct bfd_session *bfd,
 	peer->my_disc = bfd->cpkt.my_disc;
 	peer->your_disc = bfd->cpkt.your_disc;
 
-    /* counter */
+	/* counter */
 	peer->pkt_in = bfd->pkt_in;
 	peer->pkt_out = bfd->pkt_out;
 	peer->last_up = bfd->last_up;
@@ -71,13 +71,12 @@ bfd_peer_fill_info(struct sk_buff *skb, struct bfd_session *bfd,
 	return skb->len;
 
 nlmsg_failure:
-blog_info("nlmsg_failure");
+	blog_info("nlmsg_failure");
 	skb_trim(skb, b - skb->data);
 	return -1;
 }
 
-static int
-bfd_peer_dump(struct sk_buff *skb, struct netlink_callback *cb)
+static int bfd_peer_dump(struct sk_buff *skb, struct netlink_callback *cb)
 {
 	struct bfd_session *bfd;
 	struct bfd_nl_peerinfo *peer = NLMSG_DATA(cb->nlh);
@@ -85,26 +84,28 @@ bfd_peer_dump(struct sk_buff *skb, struct netlink_callback *cb)
 	int s_idx = cb->args[0];
 
 	/* Query by Peer Address */
-	if (peer->dst.sa.sa_family){
+	if (peer->dst.sa.sa_family) {
 		bfd = bfd_session_lookup(&v4v6_proto, 0, &peer->dst.sa, 0);
-		if (!bfd){
+		if (!bfd) {
 			return skb->len;
 		}
 		if (bfd_peer_fill_info(skb, bfd, NETLINK_CB(cb->skb).pid,
-							   cb->nlh->nlmsg_seq, BFD_NEWPEER, 0) <= 0){
+				       cb->nlh->nlmsg_seq, BFD_NEWPEER,
+				       0) <= 0) {
 			return skb->len;
 		}
 	}
 	/* Then All Info dump */
-	else{
-		for (i = 0; i<BFD_SESSION_HASH_SIZE; i++){
+	else {
+		for (i = 0; i < BFD_SESSION_HASH_SIZE; i++) {
 			if (i < s_idx)
 				continue;
 			bfd = v4v6_proto.nbr_tbl[i];
-			while (bfd){
-				if (bfd_peer_fill_info(skb, bfd, NETLINK_CB(cb->skb).pid,
-									   cb->nlh->nlmsg_seq,
-									   BFD_NEWPEER, NLM_F_MULTI) <= 0){
+			while (bfd) {
+				if (bfd_peer_fill_info
+				    (skb, bfd, NETLINK_CB(cb->skb).pid,
+				     cb->nlh->nlmsg_seq, BFD_NEWPEER,
+				     NLM_F_MULTI) <= 0) {
 					s_idx = i;
 					return skb->len;
 				}
@@ -118,7 +119,6 @@ bfd_peer_dump(struct sk_buff *skb, struct netlink_callback *cb)
 	return skb->len;
 }
 
-
 #if 0
 static int test_done(struct netlink_callback *cb)
 {
@@ -127,29 +127,29 @@ static int test_done(struct netlink_callback *cb)
 }
 #endif
 
-static int
-bfd_nl_rcv_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
+static int bfd_nl_rcv_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
 {
 	struct bfd_nl_peerinfo *peer;
 	struct bfd_nl_linkinfo *link;
 	int err = 0;
 
-	if (IS_DEBUG_NETLINK){
+	if (IS_DEBUG_NETLINK) {
 		blog_debug("bfd_nl_rcv: type=%d, len=%d, ack=%d",
-				   nlh->nlmsg_type,
-				   nlh->nlmsg_len,
-				   nlh->nlmsg_flags & NLM_F_ACK);
+			   nlh->nlmsg_type,
+			   nlh->nlmsg_len, nlh->nlmsg_flags & NLM_F_ACK);
 	}
 
-	if (!(nlh->nlmsg_flags&NLM_F_REQUEST))
+	if (!(nlh->nlmsg_flags & NLM_F_REQUEST))
 		return 0;
 
-	switch (nlh->nlmsg_type){
+	switch (nlh->nlmsg_type) {
 	case BFD_NEWPEER:
 		peer = NLMSG_DATA(nlh);
 
 		if (peer)
-			err = bfd_session_add(&v4v6_proto, &peer->dst.sa, peer->ifindex);
+			err =
+			    bfd_session_add(&v4v6_proto, &peer->dst.sa,
+					    peer->ifindex);
 		else
 			err = EINVAL;
 		break;
@@ -157,40 +157,40 @@ bfd_nl_rcv_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
 		peer = NLMSG_DATA(nlh);
 
 		if (peer)
-			err = bfd_session_delete(&v4v6_proto, &peer->dst.sa, peer->ifindex);
+			err =
+			    bfd_session_delete(&v4v6_proto, &peer->dst.sa,
+					       peer->ifindex);
 		else
 			err = EINVAL;
 		break;
 	case BFD_GETPEER:
-		if (!(nlh->nlmsg_flags&NLM_F_DUMP)) {
-			err =  EINVAL;
+		if (!(nlh->nlmsg_flags & NLM_F_DUMP)) {
+			err = EINVAL;
 			break;
 		}
 		return netlink_dump_start(bfd_nls, skb, nlh,
-								  bfd_peer_dump, NULL);
+					  bfd_peer_dump, NULL);
 		break;
 	case BFD_ADMINDOWN:
 		break;
 	case BFD_SETLINK:
 		link = NLMSG_DATA(nlh);
 
-		if (link){
-			struct bfd_interface *bif = bfd_interface_get(link->ifindex);
-			if (bif){
-                blog_debug("BFD_SETLINK: if=%s mintx=%d, minrx=%d, mult=%d",
-                           bif->name,
-                           link->mintx,
-                           link->minrx,
-                           link->mult);
+		if (link) {
+			struct bfd_interface *bif =
+			    bfd_interface_get(link->ifindex);
+			if (bif) {
+				blog_debug
+				    ("BFD_SETLINK: if=%s mintx=%d, minrx=%d, mult=%d",
+				     bif->name, link->mintx, link->minrx,
+				     link->mult);
 				bif->v_mintx = link->mintx;
 				bif->v_minrx = link->minrx;
 				bif->v_mult = link->mult;
 				bfd_interface_change_timer(bif);
-			}
-			else
+			} else
 				err = ENOMEM;
-		}
-		else
+		} else
 			err = EINVAL;
 		break;
 	case BFD_SETFLAG:
@@ -203,7 +203,9 @@ bfd_nl_rcv_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
 		peer = NLMSG_DATA(nlh);
 
 		if (peer)
-			err = bfd_session_set_dscp(&v4v6_proto, &peer->dst.sa, peer->ifindex, peer->dscp);
+			err =
+			    bfd_session_set_dscp(&v4v6_proto, &peer->dst.sa,
+						 peer->ifindex, peer->dscp);
 		else
 			err = EINVAL;
 		break;
@@ -215,8 +217,7 @@ bfd_nl_rcv_msg(struct sk_buff *skb, struct nlmsghdr *nlh)
 }
 
 /* Receive Handler */
-static void
-bfd_nl_rcv_skb(struct sk_buff *skb)
+static void bfd_nl_rcv_skb(struct sk_buff *skb)
 {
 	struct nlmsghdr *nlh;
 	int err;
@@ -226,10 +227,9 @@ bfd_nl_rcv_skb(struct sk_buff *skb)
 		err = 0;
 		nlh = nlmsg_hdr(skb);
 
-		if (nlh->nlmsg_len < sizeof(*nlh) ||
-		    skb->len < nlh->nlmsg_len)
+		if (nlh->nlmsg_len < sizeof(*nlh) || skb->len < nlh->nlmsg_len)
 			return;
-		
+
 		rlen = NLMSG_ALIGN(nlh->nlmsg_len);
 		if (rlen > skb->len)
 			rlen = skb->len;
@@ -237,7 +237,7 @@ bfd_nl_rcv_skb(struct sk_buff *skb)
 		/* parse client message */
 		err = bfd_nl_rcv_msg(skb, nlh);
 
-		if (err || nlh->nlmsg_flags & NLM_F_ACK){
+		if (err || nlh->nlmsg_flags & NLM_F_ACK) {
 			if (IS_DEBUG_NETLINK)
 				blog_debug("bfd_nl: send ack");
 			netlink_ack(skb, nlh, err);
@@ -248,8 +248,7 @@ bfd_nl_rcv_skb(struct sk_buff *skb)
 }
 
 /* Notify function */
-void
-bfd_nl_send(struct bfd_session *bfd)
+void bfd_nl_send(struct bfd_session *bfd)
 {
 	unsigned int size;
 	struct sk_buff *skb;
@@ -283,23 +282,21 @@ nlmsg_failure:
 	return;
 }
 
-
-int
-bfd_netlink_init(void)
+int bfd_netlink_init(void)
 {
-	bfd_nls = netlink_kernel_create(&init_net, NETLINK_BFD, 1, bfd_nl_rcv_skb, NULL, THIS_MODULE);
+	bfd_nls =
+	    netlink_kernel_create(&init_net, NETLINK_BFD, 1, bfd_nl_rcv_skb,
+				  NULL, THIS_MODULE);
 	if (!bfd_nls) {
 		blog_err("Failed to create new netlink socket(%u) for bfd",
-				 NETLINK_BFD);
+			 NETLINK_BFD);
 	}
 	return 0;
 }
 
-void
-bfd_netlink_finish(void)
+void bfd_netlink_finish(void)
 {
 	if (bfd_nls && bfd_nls->sk_socket)
 		sock_release(bfd_nls->sk_socket);
 	return;
 }
-

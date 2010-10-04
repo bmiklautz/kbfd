@@ -18,7 +18,6 @@
  * Copyright (C) Hajime TAZAKI, 2007
  */
 
-
 #ifndef __BFD_lOG_H_
 #define __BFD_lOG_H_
 

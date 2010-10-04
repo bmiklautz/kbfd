@@ -37,10 +37,9 @@
          ntohs((addr).s6_addr16[6]), \
          ntohs((addr).s6_addr16[7])
 
-union ip_pktinfo_union
-{
-    struct in_pktinfo pkti;
-    struct in6_pktinfo pkti6;
+union ip_pktinfo_union {
+	struct in_pktinfo pkti;
+	struct in6_pktinfo pkti6;
 };
 
 int bfd_v4v6_init(void);
